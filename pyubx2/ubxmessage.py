@@ -212,39 +212,6 @@ class UBXMessage:
 
         return (offset, index)
 
-    def _set_attribute_navdata(
-        self, att: tuple, offset: int, key: str, index: list
-    ) -> tuple:
-        """
-        TODO provisional Process group of navdata dwrds.
-
-        :param tuple att: attribute group - tuple of (num repeats, attribute dict)
-        :param int offset: payload offset in bytes
-        :param str key: group keyword
-        :param list index: repeating group index array
-        :return: (offset, index[])
-        :rtype: tuple
-        """
-
-        numr, attd = att  # number of repeats, attribute dictionary
-        gnssId = getattr(self, "gnssId")
-        rng = getattr(self, numr)
-        dwrds = []
-        for i in range(rng):
-            index[-1] = i + 1
-            att = attd["dwrd"]  # "U004"
-            atts = attsiz(att)  # 4 bytes
-            valb = self._payload[offset : offset + atts]
-            val = self.bytes2val(valb, att)
-            dwrds.append(val)
-            offset += atts
-
-        attd = nav_decode(gnssId, dwrds)
-        for (key, val) in attd.items():
-            setattr(self, key, val)
-
-        return (offset, index)
-
     def _set_attribute_single(
         self, att: str, offset: int, key: str, index: list, **kwargs
     ) -> int:
@@ -380,6 +347,39 @@ class UBXMessage:
             setattr(self, keyr, val)
         bfoffset += atts
         return (bitfield, bfoffset)
+
+    def _set_attribute_navdata(
+        self, att: tuple, offset: int, key: str, index: list
+    ) -> tuple:
+        """
+        TODO provisional Process group of navdata dwrds.
+
+        :param tuple att: attribute group - tuple of (num repeats, attribute dict)
+        :param int offset: payload offset in bytes
+        :param str key: group keyword
+        :param list index: repeating group index array
+        :return: (offset, index[])
+        :rtype: tuple
+        """
+
+        numr, attd = att  # number of repeats, attribute dictionary
+        gnssId = getattr(self, "gnssId")
+        rng = getattr(self, numr)
+        dwrds = []
+        for i in range(rng):
+            index[-1] = i + 1
+            att = attd["dwrd"]  # "U004"
+            atts = attsiz(att)  # 4 bytes
+            valb = self._payload[offset : offset + atts]
+            val = self.bytes2val(valb, att)
+            dwrds.append(val)
+            offset += atts
+
+        attd = nav_decode(gnssId, dwrds)
+        for (key, val) in attd.items():
+            setattr(self, key, val)
+
+        return (offset, index)
 
     def _set_cfgval_attributes(self, offset: int, **kwargs):
         """
