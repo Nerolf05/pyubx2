@@ -459,8 +459,6 @@ class UBXMessage:
                 pdict = self._get_rxmpmp_version(**kwargs)
             elif self._ubxClass == b"\x02" and self._ubxID == b"\x59":  # RXM-RLM
                 pdict = self._get_rxmrlm_version(**kwargs)
-            elif self._ubxClass == b"\x02" and self._ubxID == b"\x13":  # RXM-SFRBX
-                pdict = self._get_rxmsfrbx_version(**kwargs)
             elif self._ubxClass == b"\x06" and self._ubxID == b"\x17":  # CFG-NMEA
                 pdict = self._get_cfgnmea_version(**kwargs)
             else:
@@ -575,31 +573,6 @@ class UBXMessage:
             pdict = ubg.UBX_PAYLOADS_GET["RXM-RLM-S"]  # short
         else:
             pdict = ubg.UBX_PAYLOADS_GET["RXM-RLM-L"]  # long
-        return pdict
-
-    def _get_rxmsfrbx_version(self, **kwargs) -> dict:
-        """
-        TODO WORK IN PROGRESS
-
-        Select appropriate RXM-SFRBX payload definition based on gnssid (byte 1 of payload).
-
-        :param kwargs: optional payload key/value pairs
-        :return: dictionary representing payload definition
-        :rtype: dict
-        :raises: UBXMessageError
-
-        """
-        # pylint: disable=no-self-use
-
-        if "payload" not in kwargs:
-            raise ube.UBXMessageError(
-                "RXM-SFRBX message definitions must use payload keyword"
-            )
-        gnssId = kwargs["payload"][0:1]
-        if gnssId == b"\x99":  # TODO temporary fudge
-            pdict = ubsfr.GPS_SUBFRAMES["RXM-SFRBX"]
-        else:
-            pdict = ubg.UBX_PAYLOADS_GET["RXM-SFRBX"]
         return pdict
 
     def _get_cfgnmea_version(self, **kwargs) -> dict:

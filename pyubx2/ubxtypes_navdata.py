@@ -34,47 +34,6 @@ U24 = "U024"  # Unsigned Int 24 bytes
 
 
 GPS_SUBFRAMES = {
-    "RXM-SFRBX": {
-        "gnssId": U1,
-        "svId": U1,
-        "reserved0": U1,
-        "freqId": U1,
-        "numWords": U1,
-        "chn": U1,
-        "version": U1,
-        "reserved1": U1,
-        "dword_01": (
-            X4,
-            {
-                "padding1": U2,
-                "preamble": U8,  # = 139 (0b10001011)
-                "tlm": U14,
-                "isf": U1,
-                "reserved1": U1,
-                "word1_parity": U6,
-            },
-        ),
-        "dword_02": (
-            X4,
-            {
-                "padding2": U2,
-                "tow": U17,
-                "alert": U1,
-                "antispoof": U1,
-                "sfrid": U3,  # subframe id 1 - 5
-                "word2_paritycomp": U2,
-                "word2_parity": U6,
-            },
-        ),
-        "dword_03": X4,
-        "dword_04": X4,
-        "dword_05": X4,
-        "dword_06": X4,
-        "dword_07": X4,
-        "dword_08": X4,
-        "dword_09": X4,
-        "dword_10": X4,
-    },
     "GPS_SFR_HDR": {
         "preamble": U8,  # = 139 (0b10001011)
         "tlm": U14,
@@ -237,3 +196,9 @@ GLONASS_SUBFRAMES = {}  # TODO
 GALILEO_SUBFRAMES = {}  # TODO
 
 BEIDOU_SUBFRAMES = {}  # TODO
+
+SBAS_SUBFRAMES = {}  # TODO
+
+IMES_SUBFRAMES = {}  # TODO
+
+QZSS_SUBFRAMES = {}  # TODO

@@ -1,7 +1,7 @@
 """
-TODO WORK IN PROGRESS 
-
 Helper methods for decoding RXM-SFRBX navigation data.
+
+TODO WORK IN PROGRESS 
 
 Created on 01 Nov 2021
 
@@ -28,7 +28,7 @@ def nav_decode(gnssId: int, dwrds: list) -> dict:
 
     :param int gmssId: gnssId (0 = GPS, etc.)
     :param list dwrds: array of up to 10 x 32-bit navdata dwrds
-    :return: dict of navdata attributes
+    :return: attd - dict of decoded navdata attributes
     :rtype: dict
 
     """
@@ -61,6 +61,7 @@ def gps_nav_decode(dwrds: list) -> dict:
 
     """
 
+    # TODO parse dwrds from ubxtypes_navdata.py subframe definitions
     svid = 0
     pre = dwrds[0] >> 22 & 0b11111111
     sfr = dwrds[1] >> 8 & 0b111
