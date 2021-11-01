@@ -16,7 +16,7 @@ import pyubx2.ubxtypes_get as ubg
 import pyubx2.ubxtypes_set as ubs
 import pyubx2.ubxtypes_poll as ubp
 import pyubx2.ubxtypes_configdb as ubcdb
-import pyubx2.ubxtypes_sfrbx as ubsfr
+from pyubx2.ubxnavdecode import nav_decode
 from pyubx2.ubxhelpers import (
     calc_checksum,
     atttyp,
@@ -56,7 +56,6 @@ class UBXMessage:
         self._payload = b""
         self._length = b""
         self._checksum = b""
-        self._subframe = 0
 
         self._parsebf = kwargs.get("parsebitfield", True)  # parsing bitfields Y/N?
 
@@ -75,6 +74,10 @@ class UBXMessage:
             self._ubxID = ubxID
 
         self._do_attributes(**kwargs)
+
+        if self.identity == "RXM-SFRBX":  # TODO provisional
+            self._do_nav_decode()
+
         self._immutable = True  # once initialised, object is immutable
 
     def _do_attributes(self, **kwargs):
@@ -245,22 +248,6 @@ class UBXMessage:
 
             valb = self.val2bytes(val, att)
             self._payload += valb
-
-        # TODO temporary RXM-SFRBX decode test
-        if self.identity == "RXM-SFRBX":
-            if keyr == "dwrd_01":
-                pre = val >> 22 & 0b11111111
-                print(f"DEBUG _set_attribute_single preamble = {pre} ({bin(pre)})")
-            if keyr == "dwrd_02":
-                self._subframe = val >> 8 & 0b111
-                print(f"DEBUG _set_attribute_single sfr id = {self._subframe}")
-                setattr(self, "subframe", self._subframe)
-            if keyr == "dwrd_03" and self._subframe == 4:
-                svid = val >> 22 & 0b111111
-                print(f"DEBUG _set_attribute_single sfr4 svid = {svid}")
-            if keyr == "dwrd_03" and self._subframe == 5:
-                svid = val >> 22 & 0b111111
-                print(f"DEBUG _set_attribute_single sfr5 svid = {svid}")
 
         setattr(self, keyr, val)
         offset += atts
@@ -1088,3 +1075,26 @@ class UBXMessage:
             lis = lis + keyb
 
         return UBXMessage("CFG", "CFG-VALGET", ubt.POLL, payload=payload + lis)
+
+    def _do_nav_decode(self):
+        """
+        TODO provisional navigation data decode.
+        """
+
+        (sfr, svid) = nav_decode(
+            self.gnssId,
+            [
+                self.dwrd_01,
+                self.dwrd_02,
+                self.dwrd_03,
+                self.dwrd_04,
+                self.dwrd_05,
+                self.dwrd_06,
+                self.dwrd_07,
+                self.dwrd_08,
+                self.dwrd_09,
+                self.dwrd_10,
+            ],
+        )
+        setattr(self, "subframe", sfr)
+        setattr(self, "svidAlm", svid)
