@@ -75,9 +75,6 @@ class UBXMessage:
 
         self._do_attributes(**kwargs)
 
-        if self.identity == "RXM-SFRBX":  # TODO provisional
-            self._do_nav_decode()
-
         self._immutable = True  # once initialised, object is immutable
 
     def _do_attributes(self, **kwargs):
@@ -153,7 +150,7 @@ class UBXMessage:
                     )
             else:  # repeating group of attributes
                 (offset, index) = self._set_attribute_group(
-                    att, offset, index, **kwargs
+                    att, offset, key, index, **kwargs
                 )
         else:  # single attribute
             offset = self._set_attribute_single(att, offset, key, index, **kwargs)
@@ -161,13 +158,14 @@ class UBXMessage:
         return (offset, index)
 
     def _set_attribute_group(
-        self, att: tuple, offset: int, index: list, **kwargs
+        self, att: tuple, offset: int, key: str, index: list, **kwargs
     ) -> tuple:
         """
         Process (nested) group of attributes.
 
         :param tuple att: attribute group - tuple of (num repeats, attribute dict)
         :param int offset: payload offset in bytes
+        :param str key: group keyword
         :param list index: repeating group index array
         :param kwargs: optional payload key/value pairs
         :return: (offset, index[])
@@ -195,14 +193,55 @@ class UBXMessage:
                 rng = getattr(self, numr)
             # recursively process each group attribute,
             # incrementing the payload offset and index as we go
-            for i in range(rng):
-                index[-1] = i + 1
-                for key1 in attd.keys():
-                    (offset, index) = self._set_attribute(
-                        offset, attd, key1, index, **kwargs
-                    )
+            # RXM-SFRBX navdata group needs special decoding
+            if (
+                self._ubxClass == b"\x02"
+                and self._ubxID == b"\x13"
+                and key == "navdata"
+            ):
+                (offset, index) = self._set_attribute_navdata(att, offset, key, index)
+            else:
+                for i in range(rng):
+                    index[-1] = i + 1
+                    for key1 in attd.keys():
+                        (offset, index) = self._set_attribute(
+                            offset, attd, key1, index, **kwargs
+                        )
 
         index.pop()  # remove this (nested) group index
+
+        return (offset, index)
+
+    def _set_attribute_navdata(
+        self, att: tuple, offset: int, key: str, index: list
+    ) -> tuple:
+        """
+        TODO provisional Process group of navdata dwrds.
+
+        :param tuple att: attribute group - tuple of (num repeats, attribute dict)
+        :param int offset: payload offset in bytes
+        :param str key: group keyword
+        :param list index: repeating group index array
+        :return: (offset, index[])
+        :rtype: tuple
+        """
+
+        numr, attd = att  # number of repeats, attribute dictionary
+        gnssId = getattr(self, "gnssId")
+        rng = getattr(self, numr)
+        dwrds = []
+        for i in range(rng):
+            index[-1] = i + 1
+            att = attd["dwrd"]  # "U004"
+            atts = attsiz(att)  # 4 bytes
+            valb = self._payload[offset : offset + atts]
+            val = self.bytes2val(valb, att)
+            dwrds.append(val)
+            offset += atts
+
+        attd = nav_decode(gnssId, dwrds)
+        for (key, val) in attd.items():
+            setattr(self, key, val)
 
         return (offset, index)
 
@@ -1075,26 +1114,3 @@ class UBXMessage:
             lis = lis + keyb
 
         return UBXMessage("CFG", "CFG-VALGET", ubt.POLL, payload=payload + lis)
-
-    def _do_nav_decode(self):
-        """
-        TODO provisional navigation data decode.
-        """
-
-        (sfr, svid) = nav_decode(
-            self.gnssId,
-            [
-                self.dwrd_01,
-                self.dwrd_02,
-                self.dwrd_03,
-                self.dwrd_04,
-                self.dwrd_05,
-                self.dwrd_06,
-                self.dwrd_07,
-                self.dwrd_08,
-                self.dwrd_09,
-                self.dwrd_10,
-            ],
-        )
-        setattr(self, "subframe", sfr)
-        setattr(self, "svidAlm", svid)

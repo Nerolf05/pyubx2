@@ -14,29 +14,30 @@ Created on 01 Nov 2021
 import pyubx2.ubxtypes_navdata as ubn
 
 
-def nav_decode(gnssId: int, dwrds: list) -> tuple:
+def nav_decode(gnssId: int, dwrds: list) -> dict:
     """
     Helper function to decode parts of the RXM-SFRBX dwrds for navigation data.
 
-    :param gmssId: gnssId
-    :param dwrds: Array of up to 10 x 32 bit nav data dwrds
-    :return: tuple of (subframe, almanac svid)
-    :rtype: tuple
+    :param int gmssId: gnssId (0 = GPS, etc.)
+    :param list dwrds: array of up to 10 x 32-bit navdata dwrds
+    :return: dict of navdata attributes
+    :rtype: dict
 
     """
 
+    # print(f"DEBUG nav_decode navdata = {dwrds}")
     if gnssId == 0:
-        (sfr, svid) = gps_nav_decode(dwrds)
-        return (sfr, svid)
+        attd = gps_nav_decode(dwrds)
+        return attd
 
 
-def gps_nav_decode(dwrds: list) -> tuple:
+def gps_nav_decode(dwrds: list) -> dict:
     """
     Helper function to decode parts of the RXM-SFRBX dwrds for GPS navigation data.
 
-    :param list: array of navigation data dwrds
-    :return: tuple of (subframe, almanac svid)
-    :rtype: tuple
+    :param list dwrds: array of navigation data dwrds
+    :return: dict of navdata attributes
+    :rtype: dict
 
     """
 
@@ -48,31 +49,37 @@ def gps_nav_decode(dwrds: list) -> tuple:
     # print(
     #     f"DEBUG gps_decode: num words = {len(dwrds)}, preamble = {pre},  subframe = {sfr}, almanac svid = {svid}"
     # )
-    return (sfr, svid)
+    return {"subframe": sfr, "svidAlm": svid, "dwrds": dwrds}
 
 
-def galileo_nav_decode(dwrds: list):
+def galileo_nav_decode(dwrds: list) -> dict:
     """
     Helper function to decode parts of the RXM-SFRBX dwrds for GALILEO navigation data.
 
-    :param list: array of navigation data dwrds
+    :param list dwrds: array of navigation data dwrds
+    :return: dict of navdata attributes
+    :rtype: dict
 
     """
 
 
-def glonass_nav_decode(dwrds: list):
+def glonass_nav_decode(dwrds: list) -> dict:
     """
     Helper function to decode parts of the RXM-SFRBX dwrds for GLONASS navigation data.
 
-    :param list: array of navigation data dwrds
+    :param list dwrds: array of navigation data dwrds
+    :return: dict of navdata attributes
+    :rtype: dict
 
     """
 
 
-def beidou_nav_decode(dwrds: list):
+def beidou_nav_decode(dwrds: list) -> dict:
     """
     Helper function to decode parts of the RXM-SFRBX dwrds for BEIDOU navigation data.
 
-    :param list: array of navigation data dwrds
+    :param list dwrds: array of navigation data dwrds
+    :return: dict of navdata attributes
+    :rtype: dict
 
     """
