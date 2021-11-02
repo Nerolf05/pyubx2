@@ -70,7 +70,6 @@ def gps_nav_decode(dwrds: list) -> dict:
 
     # TODO parse dwrds from ubxtypes_navdata.py subframe definitions
     svid = 0
-    page = 1
 
     # TOW & HOW header for all subframes (dwrds 0 & 1)
     sfr = dwrds[1] >> 8 & 0b111
@@ -87,18 +86,20 @@ def gps_nav_decode(dwrds: list) -> dict:
     # subframe 1
     if sfr == 1:
         pass  # TODO
-    # subframe 2 - ephemeris data
+
+    # subframes 2 & 3 - ephemeris data
     if sfr == 2:
         pass  # TODO
-    # subframe 3 - ephemeris data
     if sfr == 3:
         pass  # TODO
+
     # subframes 4 and 5 all pages
     if sfr in [4, 5]:
         dataid = dwrds[2] >> 28 & 0b11
         svid = dwrds[2] >> 22 & 0b111111
         attd["dataid"] = dataid
         attd["svidAlm"] = svid
+
     # subframe 4 pages 2, 3, 4, 5, 7, 8, 9, 10 - Almanac data SV 25-32
     if sfr == 4 and svid in [25, 26, 27, 28, 29, 30, 31, 32]:
         pass  # TODO
@@ -120,6 +121,7 @@ def gps_nav_decode(dwrds: list) -> dict:
     # subframe 4 page 13 - Navigation Message Correction Table (NMCT)
     if sfr == 4 and svid == 52:
         pass  # TODO
+
     # subframe 5 pages 1-24 - Almanac data SV 1-24
     if sfr == 5 and svid != 51:
         pass  # TODO
