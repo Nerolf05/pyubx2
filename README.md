@@ -91,6 +91,7 @@ The constructor accepts the following optional keyword arguments:
 * `ubxonly`: True = raise error if stream contains non-UBX data, False = ignore non-UBX data (default)
 * `validate`: VALCKSUM (0x01) = validate checksum (default), VALNONE (0x00) = ignore invalid checksum or length
 * `parsebitfield`: 1 = parse bitfields ('X' type properties) as individual bit flags, where defined (default), 0 = leave bitfields as byte sequences
+* `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 * `msgmode`: 0 = GET (default), 1 = SET, 2 = POLL
 
 Example -  Serial input. This example will ignore any non-UBX data:
@@ -120,6 +121,7 @@ The `parse()` method accepts the following optional keyword arguments:
 
 * `validate`: VALCKSUM (0x01) = validate checksum (default), VALNONE (0x00) = ignore invalid checksum or length
 * `parsebitfield`: 1 = parse bitfields as individual bit flags, where defined (default), 0 = leave bitfields as byte sequences
+* `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 * `msgmode`: 0 = GET (default), 1 = SET, 2 = POLL
 
 Properties within repeating groups are parsed with a two-digit suffix (svid_01, svid_02, etc.).
@@ -173,6 +175,7 @@ You can create a `UBXMessage` object by calling the constructor with the followi
 3. mode (0=GET, 1=SET, 2=POLL)
 4. (optional) a series of keyword parameters representing the message payload
 5. (optional) `parsebitfield` keyword - 1 = define bitfields as individual bits (default), 0 = define bitfields as byte sequences
+6. (optional) `decodenavdata`: keyword - 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 
 The 'message class' and 'message id' parameters may be passed as lookup strings, integers or bytes.
 

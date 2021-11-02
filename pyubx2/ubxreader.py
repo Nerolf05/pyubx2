@@ -47,6 +47,9 @@ class UBXReader:
         ubx_only = kwargs.get("ubxonly", False)
         validate = kwargs.get("validate", VALCKSUM)
         parsebf = kwargs.get("parsebitfield", True)
+        decodenavdata = kwargs.get(
+            "decodenavdata", True
+        )  # TODO make default false in final
         msgmode = kwargs.get("msgmode", 0)
 
         # accept args for backwards compatibility if no kwargs
@@ -66,6 +69,7 @@ class UBXReader:
         self._validate = validate
         self._mode = msgmode
         self._parsebf = parsebf
+        self._decodenavdata = decodenavdata
 
     def __iter__(self):
         """Iterator."""
@@ -133,6 +137,7 @@ class UBXReader:
                     validate=self._validate,
                     msgmode=self._mode,
                     parsebitfield=self._parsebf,
+                    decodenavdata=self._decodenavdata,
                 )
                 reading = False
             else:  # it's not a UBX message (NMEA or something else)

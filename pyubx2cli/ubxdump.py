@@ -2,7 +2,7 @@
 Simple command line utility to stream the parsed UBX output of a u-blox GNSS device.
 
 Usage (all args are optional):
-ubxdump port="/dev/ttyACM1" baud=9600 timeout=5 ubxonly=0 validate=1 output=0 parsebitfield=1 filter=*
+ubxdump port="/dev/ttyACM1" baud=9600 timeout=5 ubxonly=0 validate=1 output=0 parsebitfield=1 decodenavdata=0 filter=*
 
 output: 0 = parsed, 1 = binary, 2 = hexadecimal
 
@@ -37,13 +37,15 @@ def stream_ubx(**kwargs):
     """
     Stream output to terminal.
 
-    :param int port (kwarg): baud rate (/dev/ttyACM1)
-    :param int baud (kwarg): baud rate (9600)
-    :param int timeout (kwarg): timeout in seconds (5)
-    :param int ubxonly (kwarg): set to True to generate error on non-UBX data (0)
-    :param int validate (kwarg): validate checksum (1)
-    :param int output (kwarg): 0=parsed, 1=binary, 2=hexadecimal (0)
-    :param int filter (kwarg): comma-separated list of UBX message identities to display (*)
+    :param int port: (kwarg)  baud rate (/dev/ttyACM1)
+    :param int baud: (kwarg) baud rate (9600)
+    :param int timeout: (kwarg) timeout in seconds (5)
+    :param int ubxonly: (kwarg) set to True to generate error on non-UBX data (0)
+    :param int validate: (kwarg) validate checksum (1)
+    :param int parsebf: (kwarg) parse bitfields (1)
+    :param int decodenavdata: (kwarg) decode RXM-SFRBX nav data (0)
+    :param int output: (kwarg) 0=parsed, 1=binary, 2=hexadecimal (0)
+    :param int filter: (kwarg) comma-separated list of UBX message identities to display (*)
     :raises: UBXStreamError (if ubxonly flag is 1 and stream contains non-UBX data)
 
     """
@@ -56,6 +58,7 @@ def stream_ubx(**kwargs):
         validate = int(kwargs.get("validate", VALCKSUM))
         output = int(kwargs.get("output", PARSED))
         parsebf = int(kwargs.get("parsebitfield", True))
+        decodenavdata = int(kwargs.get("decodenavdata", False))
         filter = kwargs.get("filter", "*")
         filtertxt = "" if filter == "*" else f", filtered by {filter}"
         print(
@@ -69,6 +72,7 @@ def stream_ubx(**kwargs):
             validate=validate,
             msgmode=GET,
             parsebitfield=parsebf,
+            decodenavdata=decodenavdata,
         )
         for (raw, parsed) in ubr:
             if filter == "*" or parsed.identity in filter:
@@ -96,7 +100,7 @@ def main():
                 "the parsed UBX output of a u-blox GNSS device.\n\n",
                 "Usage (all args are optional): ubxdump",
                 f"port={PORT} baud={BAUD} timeout={TIMEOUT}",
-                "ubxonly=0 validate=1 output=0 parsebitfield=1 filter=*\n\n Type Ctrl-C to terminate.",
+                "ubxonly=0 validate=1 output=0 parsebitfield=1 decodenavdata=0 filter=*\n\n Type Ctrl-C to terminate.",
             )
             sys.exit()
 

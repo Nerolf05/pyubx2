@@ -58,6 +58,9 @@ class UBXMessage:
         self._checksum = b""
 
         self._parsebf = kwargs.get("parsebitfield", True)  # parsing bitfields Y/N?
+        self._decodenavdata = kwargs.get(
+            "decodenavdata", True
+        )  # decode RXM-SFRBX nav data Y/N? TODO make default False in final
 
         if msgmode not in (0, 1, 2):
             raise ube.UBXMessageError(f"Invalid msgmode {msgmode} - must be 0, 1 or 2.")
@@ -198,6 +201,7 @@ class UBXMessage:
                 self._ubxClass == b"\x02"
                 and self._ubxID == b"\x13"
                 and key == "navdata"
+                and self._decodenavdata
             ):
                 (offset, index) = self._set_attribute_navdata(att, offset, key, index)
             else:
