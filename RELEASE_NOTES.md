@@ -1,5 +1,12 @@
 # pyubx2 Release Notes
 
+### RELEASE 1.1.4
+
+ENHANCEMENTS:
+
+1. Add functionality to decode RXM-SFRBX navigation data dwrds on a single-pass basis. NB: `pyubx2` will continue to output parsed UBX data as individual `UBXMessage` objects. There are no plans to aggregate time series data across multiple RXM-SFRBX messages or to perform conversion to other output formats e.g. RINEX.
+2. Add Python 3.10 to list of supported Python 3 editions (no code changes were required).
+
 ### RELEASE 1.1.3
 
 ENHANCEMENTS:

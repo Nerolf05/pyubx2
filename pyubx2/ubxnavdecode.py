@@ -55,22 +55,79 @@ def gps_nav_decode(dwrds: list) -> dict:
     """
     TODO Helper function to decode parts of the RXM-SFRBX dwrds for GPS navigation data.
 
+    The message structure shall utilize a basic format of a 1500 bit long frame made up
+    of five subframes, each subframe being 300 bits long. Subframes 4 and 5 shall be
+    subcommutated 25 times each, so that a complete data message shall require the
+    transmission of 25 full frames. The 25 versions of subframes 4 and 5 shall be
+    referred to herein as pages 1 through 25 of each subframe. Each subframe shall
+    consist of ten words, each 30 bits long; the MSB of all words shall be transmitted first.
+
     :param list dwrds: array of navigation data dwrds
-    :return: dict of navdata attributes
+    :return: dict of decoded navdata attributes
     :rtype: dict
 
     """
 
     # TODO parse dwrds from ubxtypes_navdata.py subframe definitions
     svid = 0
-    pre = dwrds[0] >> 22 & 0b11111111
+    page = 1
+
+    # TOW & HOW header for all subframes (dwrds 0 & 1)
     sfr = dwrds[1] >> 8 & 0b111
+    attd = {
+        "preamble": dwrds[0] >> 22 & 0b11111111,
+        "tlm": dwrds[0] >> 8 & 0b11111111111111,
+        "isf": dwrds[0] >> 7 & 0b1,
+        "tow": dwrds[1] >> 13 & 0b11111111111111111,
+        "alert": dwrds[1] >> 12 & 0b1,
+        "antispoof": dwrds[1] >> 11 & 0b1,
+        "subframe": sfr,
+    }
+
+    # subframe 1
+    if sfr == 1:
+        pass  # TODO
+    # subframe 2 - ephemeris data
+    if sfr == 2:
+        pass  # TODO
+    # subframe 3 - ephemeris data
+    if sfr == 3:
+        pass  # TODO
+    # subframes 4 and 5 all pages
     if sfr in [4, 5]:
+        dataid = dwrds[2] >> 28 & 0b11
         svid = dwrds[2] >> 22 & 0b111111
-    # print(
-    #     f"DEBUG gps_decode: num words = {len(dwrds)}, preamble = {pre},  subframe = {sfr}, almanac svid = {svid}"
-    # )
-    return {"subframe": sfr, "svidAlm": svid, "dwrds": dwrds}
+        attd["dataid"] = dataid
+        attd["svidAlm"] = svid
+    # subframe 4 pages 2, 3, 4, 5, 7, 8, 9, 10 - Almanac data SV 25-32
+    if sfr == 4 and svid in [25, 26, 27, 28, 29, 30, 31, 32]:
+        pass  # TODO
+    # subframe 4 pages 1, 6, 11, 16, 21 - Reserved
+    if sfr == 4 and svid == 57:
+        attd["dwrds"] = dwrds
+    # subframe 4 pages 12, 19, 20, 22, 23, 24 - Reserved
+    if sfr == 4 and svid in [58, 59, 60, 61, 62]:
+        attd["dwrds"] = dwrds
+    # subframe 4 pages 14, 15, 17 - Reserved & special messages
+    if sfr == 4 and svid in [53, 54, 55]:
+        attd["dwrds"] = dwrds
+    # subframe 4 page 18 - Ionospheric and UTC data
+    if sfr == 4 and svid == 56:
+        pass  # TODO
+    # subframe 4 page 25 - SV health SV 25-32, A-S flags, SV conf
+    if sfr == 4 and svid == 63:
+        pass  # TODO
+    # subframe 4 page 13 - Navigation Message Correction Table (NMCT)
+    if sfr == 4 and svid == 52:
+        pass  # TODO
+    # subframe 5 pages 1-24 - Almanac data SV 1-24
+    if sfr == 5 and svid != 51:
+        pass  # TODO
+    # subframe 5 page 25 - SV health SV 1-24, Almanac ref time & week
+    if sfr == 5 and svid == 51:
+        pass  # TODO
+
+    return attd
 
 
 def galileo_nav_decode(dwrds: list) -> dict:
