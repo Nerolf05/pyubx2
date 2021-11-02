@@ -53,7 +53,7 @@ def nav_decode(gnssId: int, dwrds: list) -> dict:
 
 def gps_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for GPS navigation data.
+    TODO Helper function to decode RXM-SFRBX dwrds for GPS navigation data.
 
     The message structure shall utilize a basic format of a 1500 bit long frame made up
     of five subframes, each subframe being 300 bits long. Subframes 4 and 5 shall be
@@ -68,7 +68,6 @@ def gps_nav_decode(dwrds: list) -> dict:
 
     """
 
-    # TODO parse dwrds from ubxtypes_navdata.py subframe definitions
     svid = 0
 
     # TOW & HOW header for all subframes (dwrds 0 & 1)
@@ -134,7 +133,7 @@ def gps_nav_decode(dwrds: list) -> dict:
 
 def galileo_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for GALILEO navigation data.
+    Helper function to decode RXM-SFRBX dwrds for GALILEO navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -142,12 +141,12 @@ def galileo_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
 
 
 def glonass_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for GLONASS navigation data.
+    Helper function to decode RXM-SFRBX dwrds for GLONASS navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -155,12 +154,12 @@ def glonass_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
 
 
 def beidou_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for BEIDOU navigation data.
+    Helper function to decode RXM-SFRBX dwrds for BEIDOU navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -168,12 +167,12 @@ def beidou_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
 
 
 def sbas_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for SBAS navigation data.
+    Helper function to decode RXM-SFRBX dwrds for SBAS navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -181,12 +180,12 @@ def sbas_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
 
 
 def imes_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for IMES navigation data.
+    Helper function to decode RXM-SFRBX dwrds for IMES navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -194,12 +193,12 @@ def imes_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
 
 
 def qzss_nav_decode(dwrds: list) -> dict:
     """
-    TODO Helper function to decode parts of the RXM-SFRBX dwrds for QZSS navigation data.
+    Helper function to decode RXM-SFRBX dwrds for QZSS navigation data.
 
     :param list dwrds: array of navigation data dwrds
     :return: dict of navdata attributes
@@ -207,4 +206,4 @@ def qzss_nav_decode(dwrds: list) -> dict:
 
     """
 
-    return {"dwrds": dwrds}
+    return {"dwrds": dwrds}  # TODO just a stub for now
