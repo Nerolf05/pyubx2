@@ -172,7 +172,51 @@ def gps_nav_decode(dwrds: list) -> dict:
 
     # subframe 4 page 13 - Navigation Message Correction Table (NMCT)
     if sfr == 4 and svid == 52:
-        pass  # TODO
+        attd["avail"] = dwrds[2] >> 20 & B2
+        attd["erd1"] = dwrds[2] >> 14 & B6
+        attd["erd2"] = dwrds[2] >> 8 & B6
+        erd3_msb = dwrds[2] >> 6 & B2
+        erd3_lsb = dwrds[3] >> 26 & B4
+        attd["erd3"] = (erd3_msb << 4) + erd3_lsb
+        attd["erd4"] = dwrds[3] >> 20 & B6
+        attd["erd5"] = dwrds[3] >> 14 & B6
+        attd["erd6"] = dwrds[3] >> 8 & B6
+        erd7_msb = dwrds[2] >> 6 & B2
+        erd7_lsb = dwrds[4] >> 26 & B4
+        attd["erd7"] = (erd7_msb << 4) + erd7_lsb
+        attd["erd8"] = dwrds[4] >> 20 & B6
+        attd["erd9"] = dwrds[4] >> 14 & B6
+        attd["erd10"] = dwrds[4] >> 8 & B6
+        erd11_msb = dwrds[4] >> 6 & B2
+        erd11_lsb = dwrds[5] >> 26 & B4
+        attd["erd11"] = (erd11_msb << 4) + erd11_lsb
+        attd["erd12"] = dwrds[5] >> 20 & B6
+        attd["erd13"] = dwrds[5] >> 14 & B6
+        attd["erd14"] = dwrds[5] >> 8 & B6
+        erd15_msb = dwrds[5] >> 6 & B2
+        erd15_lsb = dwrds[6] >> 26 & B4
+        attd["erd15"] = (erd15_msb << 4) + erd15_lsb
+        attd["erd16"] = dwrds[6] >> 20 & B6
+        attd["erd17"] = dwrds[6] >> 14 & B6
+        attd["erd18"] = dwrds[6] >> 8 & B6
+        erd19_msb = dwrds[6] >> 6 & B2
+        erd19_lsb = dwrds[7] >> 26 & B4
+        attd["erd19"] = (erd19_msb << 4) + erd19_lsb
+        attd["erd20"] = dwrds[7] >> 20 & B6
+        attd["erd21"] = dwrds[7] >> 14 & B6
+        attd["erd22"] = dwrds[7] >> 8 & B6
+        erd23_msb = dwrds[7] >> 6 & B2
+        erd23_lsb = dwrds[8] >> 26 & B4
+        attd["erd23"] = (erd23_msb << 4) + erd23_lsb
+        attd["erd24"] = dwrds[8] >> 20 & B6
+        attd["erd25"] = dwrds[8] >> 14 & B6
+        attd["erd26"] = dwrds[8] >> 8 & B6
+        erd27_msb = dwrds[8] >> 6 & B2
+        erd27_lsb = dwrds[9] >> 26 & B4
+        attd["erd27"] = (erd27_msb << 4) + erd27_lsb
+        attd["erd28"] = dwrds[9] >> 20 & B6
+        attd["erd29"] = dwrds[9] >> 14 & B6
+        attd["erd30"] = dwrds[9] >> 8 & B6
 
     # subframe 4 page 18 - Ionospheric and UTC data
     if sfr == 4 and svid == 56:
@@ -197,7 +241,46 @@ def gps_nav_decode(dwrds: list) -> dict:
 
     # subframe 4 page 25 - SV health SV 25-32, A-S flags, SV conf
     if sfr == 4 and svid == 63:
-        pass  # TODO
+        attd["svconf1"] = dwrds[2] >> 18 & B4
+        attd["svconf2"] = dwrds[2] >> 14 & B4
+        attd["svconf3"] = dwrds[2] >> 10 & B4
+        attd["svconf4"] = dwrds[2] >> 6 & B4
+        attd["svconf5"] = dwrds[3] >> 26 & B4
+        attd["svconf6"] = dwrds[3] >> 22 & B4
+        attd["svconf7"] = dwrds[3] >> 18 & B4
+        attd["svconf8"] = dwrds[3] >> 14 & B4
+        attd["svconf9"] = dwrds[3] >> 10 & B4
+        attd["svconf10"] = dwrds[3] >> 6 & B4
+        attd["svconf11"] = dwrds[4] >> 26 & B4
+        attd["svconf12"] = dwrds[4] >> 22 & B4
+        attd["svconf13"] = dwrds[4] >> 18 & B4
+        attd["svconf14"] = dwrds[4] >> 14 & B4
+        attd["svconf15"] = dwrds[4] >> 10 & B4
+        attd["svconf16"] = dwrds[4] >> 6 & B4
+        attd["svconf17"] = dwrds[5] >> 26 & B4
+        attd["svconf18"] = dwrds[5] >> 22 & B4
+        attd["svconf19"] = dwrds[5] >> 18 & B4
+        attd["svconf20"] = dwrds[5] >> 14 & B4
+        attd["svconf21"] = dwrds[5] >> 10 & B4
+        attd["svconf22"] = dwrds[5] >> 6 & B4
+        attd["svconf23"] = dwrds[6] >> 26 & B4
+        attd["svconf24"] = dwrds[6] >> 22 & B4
+        attd["svconf25"] = dwrds[6] >> 18 & B4
+        attd["svconf26"] = dwrds[6] >> 14 & B4
+        attd["svconf27"] = dwrds[6] >> 10 & B4
+        attd["svconf28"] = dwrds[6] >> 6 & B4
+        attd["svconf29"] = dwrds[7] >> 26 & B4
+        attd["svconf30"] = dwrds[7] >> 22 & B4
+        attd["svconf31"] = dwrds[7] >> 18 & B4
+        attd["svconf32"] = dwrds[7] >> 14 & B4
+        attd["svhealth25"] = dwrds[7] >> 6 & B6
+        attd["svhealth26"] = dwrds[8] >> 24 & B6
+        attd["svhealth27"] = dwrds[8] >> 18 & B6
+        attd["svhealth28"] = dwrds[8] >> 12 & B6
+        attd["svhealth29"] = dwrds[8] >> 6 & B6
+        attd["svhealth30"] = dwrds[9] >> 24 & B6
+        attd["svhealth31"] = dwrds[9] >> 18 & B6
+        attd["svhealth32"] = dwrds[9] >> 12 & B6
 
     # subframe 5 pages 1-24 - Almanac data SV 1-24
     # subframe 4 pages 2, 3, 4, 5, 7, 8, 9, 10 - Almanac data SV 25-32
