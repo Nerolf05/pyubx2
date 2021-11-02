@@ -11,7 +11,8 @@ Created on 01 Nov 2021
 """
 # pylint: disable=invalid-name
 
-import pyubx2.ubxtypes_navdata as ubn
+# TODO might use these definitions if it makes code clearer:
+# import pyubx2.ubxtypes_navdata as ubn
 
 GPS = 0
 SBAS = 1

@@ -1,7 +1,7 @@
 """
 UBX RXM-SFRBX Navigation Data Subframe Definitions
 
-*** TODO WORK IN PROGRESS ***
+*** TODO WORK IN PROGRESS, currently only used for quick reference ***
 
 Created on 31 Oct 2021
 
