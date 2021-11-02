@@ -182,7 +182,7 @@ class UBXMessage:
             and self._ubxID == b"\x8b"
             and self._mode == ubt.GET
         ):
-            self._set_cfgval_attributes(offset, **kwargs)
+            self._set_attribute_cfgval(offset, **kwargs)
         else:
             # derive or retrieve number of items in group
             if isinstance(numr, int):  # fixed number of repeats
@@ -352,7 +352,9 @@ class UBXMessage:
         self, att: tuple, offset: int, key: str, index: list
     ) -> tuple:
         """
-        TODO provisional Process group of navdata dwrds.
+        Parse and decode RXM-SFRBX nav data dwrds.
+
+        TODO WORK IN PROGRESS
 
         :param tuple att: attribute group - tuple of (num repeats, attribute dict)
         :param int offset: payload offset in bytes
@@ -381,7 +383,7 @@ class UBXMessage:
 
         return (offset, index)
 
-    def _set_cfgval_attributes(self, offset: int, **kwargs):
+    def _set_attribute_cfgval(self, offset: int, **kwargs):
         """
         Parse CFG-VALGET payload to set of configuration
         key value pairs.
