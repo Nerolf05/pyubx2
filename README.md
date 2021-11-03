@@ -175,7 +175,6 @@ You can create a `UBXMessage` object by calling the constructor with the followi
 3. mode (0=GET, 1=SET, 2=POLL)
 4. (optional) a series of keyword parameters representing the message payload
 5. (optional) `parsebitfield` keyword - 1 = define bitfields as individual bits (default), 0 = define bitfields as byte sequences
-6. (optional) `decodenavdata`: keyword - 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 
 The 'message class' and 'message id' parameters may be passed as lookup strings, integers or bytes.
 
@@ -377,6 +376,7 @@ Optional Args:
 - `validate`: 1 = validate checksum (default), 0 = do not validate checksum
 - `output`: 0 = parsed (default), 1 = binary, 2 = hexadecimal
 - `parsebitfield`: 1 = parse bitfields as individual bits (default), 0 = leave bitfields as byte sequences
+- `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 - `filter`: comma-separated list of specific UBX message identities to display e.g. `filter=NAV-PVT,NAV-CLOCK` (defaults to "*" - all UBX messages).
 
 For help, type:

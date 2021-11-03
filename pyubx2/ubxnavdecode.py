@@ -1,8 +1,6 @@
 """
 Helper methods for decoding RXM-SFRBX navigation data.
 
-TODO WORK IN PROGRESS 
-
 Created on 01 Nov 2021
 
 :author: semuadmin
@@ -10,9 +8,6 @@ Created on 01 Nov 2021
 :license: BSD 3-Clause
 """
 # pylint: disable=invalid-name
-
-# TODO might use these definitions if it makes code clearer:
-# import pyubx2.ubxtypes_navdata as ubn
 
 GPS = 0
 SBAS = 1
@@ -71,6 +66,8 @@ def nav_decode(gnssId: int, dwrds: list) -> dict:
 def gps_nav_decode(dwrds: list) -> dict:
     """
     TODO Helper function to decode RXM-SFRBX dwrds for GPS navigation data.
+
+    GPS information sourced from https://www.gps.gov/technical/icwg/IS-GPS-200L.pdf
 
     The message structure shall utilize a basic format of a 1500 bit long frame made up
     of five subframes, each subframe being 300 bits long. Subframes 4 and 5 shall be
