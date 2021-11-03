@@ -23,6 +23,7 @@ QZSS = 5
 GLONASS = 6
 
 # bitshift flags for clarity
+B1 = 0b1
 B2 = 0b11
 B3 = 0b111
 B4 = 0b1111
@@ -87,14 +88,14 @@ def gps_nav_decode(dwrds: list) -> dict:
     svid = 0
 
     # TOW & HOW header for all subframes (dwrds 0 & 1)
-    sfr = dwrds[1] >> 8 & 0b111
+    sfr = dwrds[1] >> 8 & B3
     attd = {
         "preamble": dwrds[0] >> 22 & B8,
         "tlm": dwrds[0] >> 8 & B14,
-        "isf": dwrds[0] >> 7 & 0b1,
+        "isf": dwrds[0] >> 7 & B1,
         "tow": dwrds[1] >> 13 & B17,
-        "alert": dwrds[1] >> 12 & 0b1,
-        "antispoof": dwrds[1] >> 11 & 0b1,
+        "alert": dwrds[1] >> 12 & B1,
+        "antispoof": dwrds[1] >> 11 & B1,
         "subframe": sfr,
     }
 
@@ -103,10 +104,10 @@ def gps_nav_decode(dwrds: list) -> dict:
         attd["week_no"] = dwrds[2] >> 20 & B10
         attd["l2code"] = dwrds[2] >> 18 & B2
         attd["uraIndex"] = dwrds[2] >> 14 & B4
-        attd["svHealth1"] = dwrds[2] >> 13 & 0b1
+        attd["svHealth1"] = dwrds[2] >> 13 & B1
         attd["svHealth2"] = dwrds[2] >> 8 & B5
         iodc_msb = dwrds[2] >> 1 & B2
-        attd["l2p"] = dwrds[3] >> 29 & 0b1
+        attd["l2p"] = dwrds[3] >> 29 & B1
         attd["tgd"] = dwrds[6] >> 6 & B8
         iodc_lsb = dwrds[7] >> 22 & B8
         attd["iodc"] = (iodc_msb << 8) + iodc_lsb
@@ -115,7 +116,7 @@ def gps_nav_decode(dwrds: list) -> dict:
         attd["af1"] = dwrds[8] >> 6 & B16
         attd["af0"] = dwrds[9] >> 8 & B22
 
-    # subframes 2 - ephemeris data
+    # subframe 2 - ephemeris data
     if sfr == 2:
         attd["iodc"] = dwrds[2] >> 22 & B8
         attd["crs"] = dwrds[2] >> 6 & B16
@@ -132,10 +133,10 @@ def gps_nav_decode(dwrds: list) -> dict:
         sqra_lsb = dwrds[8] >> 6 & B24
         attd["sqra"] = (sqra_msb << 24) + sqra_lsb
         attd["toe"] = dwrds[9] >> 14 & B16
-        attd["fint"] = dwrds[9] >> 13 & 0b1
+        attd["fint"] = dwrds[9] >> 13 & B1
         attd["aodo"] = dwrds[9] >> 8 & B5
 
-    # subframes 3 - ephemeris data
+    # subframe 3 - ephemeris data
     if sfr == 3:
         attd["cic"] = dwrds[2] >> 14 & B16
         Ω0_msb = dwrds[2] >> 6 & B8
