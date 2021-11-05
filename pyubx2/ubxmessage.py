@@ -236,7 +236,7 @@ class UBXMessage:
         keyr = key
         for i in index:  # one index for each nested level
             if i > 0:
-                keyr = keyr + f"_{i:02d}"
+                keyr += f"_{i:02d}"
 
         # determine attribute size (bytes)
         if att == ubt.CH:  # variable length string
@@ -332,7 +332,7 @@ class UBXMessage:
         keyr = key
         for i in index:  # one index for each nested level
             if i > 0:
-                keyr = keyr + f"_{i:02d}"
+                keyr += f"_{i:02d}"
 
         atts = attsiz(keyt)  # determine flag size in bits
 
