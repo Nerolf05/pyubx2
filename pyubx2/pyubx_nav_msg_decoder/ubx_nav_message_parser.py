@@ -45,40 +45,14 @@ class NavMsgDecodingError(Exception):
     """
 
 
-class ExpectNavMsgLevel(IntEnum):
-    """Collect svid data like ephemeris, clock data to decrease waiting time."""
-    SV_DATA = auto()  # transmitting sv-related only
-    ALMANAC = auto()  # i.e. GPS.CNAV reduced alm but not midi
-    ALL = auto()  # wait for whole nav message to be received
-
-
 class UbxNavMessageParserHandle:
     """
     Manages parsing of ubx-rxm-sfrbx into corresponding GNSS-Navigation message.
     """
 
-    # TODO number of pages are not yet correct -> do later
-    NavPages: ClassVar[Dict[UbxGnssId, Dict[GnssNavMsgId, Dict[ExpectNavMsgLevel, int]]]] = {
-        UbxGnssId.GPS: {   # LNAV   CNAV
-            GnssNavMsgId.GPS_LNAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 52},
-            GnssNavMsgId.GPS_CNAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 13},
-            },
-        UbxGnssId.Galileo: {  # INAV
-            GnssNavMsgId.GAL_INAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 500},
-            GnssNavMsgId.GAL_FNAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 5},
-        },
-        UbxGnssId.GLONASS: {  # NAV
-            GnssNavMsgId.GLON_NAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 55},
-        },
-        UbxGnssId.BeiDou: {
-            GnssNavMsgId.BEID_D1:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 99},
-            GnssNavMsgId.BEID_D2:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 5},
-            GnssNavMsgId.BEID_CNAV:  {ExpectNavMsgLevel.SV_DATA: 5, ExpectNavMsgLevel.ALL: 5},
-        },
-    }
-
     UbxSignalGnssNavMsgMap: ClassVar[Dict[UbxGnssId, Dict[int, GnssNavMsgId]]] = {
-        UbxGnssId.GPS: {0: GnssNavMsgId.GPS_LNAV, 3: GnssNavMsgId.GPS_CNAV, 4: GnssNavMsgId.GPS_CNAV},  # TODO 3, 4 chk
+        # TODO CNAV vs. CNAV2 not yet considerd (based on svid)
+        UbxGnssId.GPS: {0: GnssNavMsgId.GPS_LNAV, 3: GnssNavMsgId.GPS_CNAV, 4: GnssNavMsgId.GPS_CNAV},
         UbxGnssId.GLONASS: {0: GnssNavMsgId.GLON_NAV, 2: GnssNavMsgId.GLON_NAV},
         UbxGnssId.BeiDou: {0: GnssNavMsgId.BEID_D1, 1: GnssNavMsgId.BEID_D2, 2: GnssNavMsgId.BEID_D1,
                            3: GnssNavMsgId.BEID_D2},
@@ -86,74 +60,67 @@ class UbxNavMessageParserHandle:
                             6: GnssNavMsgId.GAL_INAV},
     }
 
-    def __init__(self, nav_msg_lvl: ExpectNavMsgLevel = ExpectNavMsgLevel.ALL):
-        # self._raw_data: Dict[UbxGnssId, Dict[GnssNavMsgId, Dict[UbxTypeSvid, Dict[UbxTypeRawNavDataId: bytes]]]] = {}
+    def __init__(self):
         self._raw_data: Dict = {}
-        self._read_sufficient: Dict[UbxGnssId, Dict[GnssNavMsgId, Dict[UbxTypeSvid, bool]]] = {}
+        self.gnss_msgs: Dict = {}
         self.nav_msg_parser: NavMessageParser = NavMessageParser()
         self.logger = getLogger()
-        self.nav_msg_lvl: ExpectNavMsgLevel = nav_msg_lvl
-        self._need_data: bool = True
-
+        # Should be changed
         self._static_galileo_alm_helper: Dict = {
             1: {},  # "E1B"
             5: {},  # "E5b"
         }
         pass
 
-    @property
-    def need_data(self) -> bool:
-        """Check all required data is stored + _read_sufficient is not empty."""
-        self._need_data = not (all(self._read_sufficient[gnss_id][nav_msg_id][sv_id]
-                                   for gnss_id in self._read_sufficient.keys()
-                                   for nav_msg_id in self._read_sufficient[gnss_id].keys()
-                                   for sv_id in self._read_sufficient[gnss_id][nav_msg_id].keys()
-                                   )
-                               and bool(self._read_sufficient)
-                               )
-        return self._need_data
-
-    def add_raw_data(self, ubx_msg: UBXMessage) -> bool:
+    def add_subframe(self, ubx_msg: UBXMessage) -> bool:
         """
         Extract raw data from UBXMessage and stores it.
         :param ubx_msg: UBX-RXM-SFRBX
         :return: bool
         """
+
+        # TODO store GnssNavmsg and update instead of
+
         if isinstance(ubx_msg, UBXMessage) and ubx_msg.identity == "RXM-SFRBX":
             gnss_id = getattr(ubx_msg, "gnssId", None)
             sv_id = getattr(ubx_msg, "svId")
+
             # ubx_raw_nav_data_id is used as uuid to identify pages of interest
             prep_ubx = self.preprocess_ubx(ubx_msg=ubx_msg, gnss_id=gnss_id, sv_id=sv_id)
-            if prep_ubx is not None:
+            if prep_ubx:
                 nav_msg_id, ubx_raw_nav_data_id, raw_nav_data = prep_ubx
             else:
                 return False
             data = {ubx_raw_nav_data_id: raw_nav_data}
-            # add data to dict
+
+            # add data to dict for debug only
             if gnss_id in self._raw_data.keys():
                 if sv_id in self._raw_data[gnss_id].keys():
                     if nav_msg_id in self._raw_data[gnss_id][sv_id].keys():
                         self._raw_data[gnss_id][sv_id][nav_msg_id].update(data)  # old pages are replaced by new ones
-                        # TODO think about parsing every new data and remove check inside here
-                        if self.check_gnss_sig_sv(gnss_id=gnss_id, sv_id=sv_id, nav_msg_id=nav_msg_id):
-                            self._read_sufficient[gnss_id][sv_id][nav_msg_id] = True
                     else:
                         self._raw_data[gnss_id][sv_id].update({nav_msg_id: data})
-                        self._read_sufficient[gnss_id][sv_id].update({nav_msg_id: False})
+                        self.gnss_msgs[gnss_id][sv_id].update({nav_msg_id: self.nav_msg_parser.determine_nav_msg(
+                            nav_msg_id=nav_msg_id, svid=sv_id
+                        )})
                 else:
                     self._raw_data[gnss_id].update({sv_id: {nav_msg_id: data}})
-                    self._read_sufficient[gnss_id].update({sv_id: {nav_msg_id: False}})
+                    self.gnss_msgs[gnss_id].update({sv_id: {nav_msg_id: self.nav_msg_parser.determine_nav_msg(
+                        nav_msg_id=nav_msg_id, svid=sv_id
+                    )}})
             else:
                 self._raw_data.update({gnss_id: {sv_id: {nav_msg_id: data}}})
-                self._read_sufficient.update({gnss_id: {sv_id: {nav_msg_id: False}}})
+                self.gnss_msgs.update({gnss_id: {sv_id: {nav_msg_id: self.nav_msg_parser.determine_nav_msg(
+                    nav_msg_id=nav_msg_id, svid=sv_id
+                )}}})
+            # Add subframe to gnss_nav_msg
+            self.nav_msg_parser.decode_subframe(
+                gnss_nav_msg=self.gnss_msgs[gnss_id][sv_id][nav_msg_id], uuid=ubx_raw_nav_data_id, payload=raw_nav_data
+            )
+
             return True
         else:
             return False
-
-    def check_gnss_sig_sv(self, gnss_id: UbxGnssId, sv_id: UbxTypeSvid, nav_msg_id: GnssNavMsgId) -> bool:
-        """Test if sufficient pages/subframes in order to decode whole msg are available."""
-        nof_pages = self.NavPages[gnss_id][nav_msg_id][self.nav_msg_lvl]
-        return len(self._raw_data[gnss_id][sv_id][nav_msg_id]) == nof_pages
 
     def preprocess_ubx(self, ubx_msg: UBXMessage, gnss_id: UbxGnssId, sv_id: UbxTypeSvid
                        ) -> Optional[Tuple[GnssNavMsgId, UuidType, Union[bytes, int]]]:
@@ -179,7 +146,7 @@ class UbxNavMessageParserHandle:
         except (UbxNavDecodeError, NotImplementedError, Exception) as e:
             self.logger.warning(f"UbxNavDecoding error: {e} while trying to preprocess: {gnss_id}.")
         else:
-            if nav_msg_id != GnssNavMsgId.UNDEFINED and nav_msg_id == GnssNavMsgId.BEID_D1:
+            if nav_msg_id != GnssNavMsgId.UNDEFINED:
                 result = nav_msg_id, ubx_raw_nav_data_id, raw_data
             else:
                 self.logger.warning(f"Passed sivd: {sv_id} !NavMsg could not be identified")
@@ -209,7 +176,8 @@ class UbxNavMessageParserHandle:
         elif n_words == 9:
             freq_id = 1  # E1B
 
-        if freq_id not in UbxSignalId[getattr(ubx_msg, "gnssId")].keys():  # no F/Nav differentiation as not tracked F9P
+        # no F/Nav differentiation as not tracked F9P - but there already exists a ubx-prototype with bands to track L5 band
+        if freq_id not in UbxSignalId[getattr(ubx_msg, "gnssId")].keys():
             raise UbxNavDecodeError(f"Galileo message cannot be decoded")
 
         words = self._ubx_rxm_sfrbx_dwrds(ubx_msg=ubx_msg)
@@ -251,58 +219,6 @@ class UbxNavMessageParserHandle:
                     raw_data = word
 
         return nav_msg_id, uuid_data, raw_data
-
-    @staticmethod
-    def _sfrbx_lift_gal_inav(dwrds: List[int]) -> Tuple[int, int, int]:
-        """Extract word, SAR and CRC from dwrds of ubx-rxm-sfrbx galileo I/NAV msg. Note SAR not defined for E5 BI/Q"""
-        word, sar, crc = 0, 0, 0
-        for idx, dwrd in enumerate(dwrds):
-            if idx == 0:
-                word = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=30)
-            elif idx in (1, 2):
-                word = int_append_int(int_a=word, int_b=dwrd, l_shift_a=32, bits_oi_b=32)
-            elif idx == 3:
-                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=14, bits_oi=18)
-                word = int_append_int(int_a=word, int_b=mod_dwrd, l_shift_a=18)
-            elif idx == 4:
-                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=14, bits_oi=16)
-                word = int_append_int(int_a=word, int_b=mod_dwrd, l_shift_a=16, bits_oi_b=16)
-            elif idx == 5:
-                sar = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=6)
-            elif idx == 6:
-                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=16, bits_oi=16)
-                sar = int_append_int(int_a=sar, int_b=mod_dwrd, l_shift_a=16, bits_oi_b=16)
-                crc = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=14)
-            elif idx == 7:
-                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=22, bits_oi=10)
-                crc = int_append_int(int_a=crc, int_b=mod_dwrd, l_shift_a=10, bits_oi_b=10)
-
-        return word, sar, crc
-
-    @staticmethod
-    def _sfrbx_lift_glon_nav(dwrds: List[int]) -> Tuple[int, int, int, int]:
-        """Extract string, string_nr, super_frame_nr and frame_nr"""
-        string, string_nr, sf_nr, f_nr = 0, 0, 0, 0
-        for idx, word in enumerate(dwrds):
-            if idx in (0, 1):
-                string = int_append_int(int_a=string, int_b=word, l_shift_a=32, bits_oi_b=32)
-                if idx == 0:
-                    string_nr = shift_mask_int(int_=word, r_shift=27, bits_oi=4)
-            elif idx == 2:
-                string = int_append_int(int_a=string, int_b=word, l_shift_a=11, bits_oi_b=21)
-            elif idx == 3 and word != 0:  # note this word is deduced by receiver and thus not always available
-                sf_nr = shift_mask_int(int_=word, r_shift=16, bits_oi=16)
-                f_nr = shift_mask_int(int_=word, r_shift=0, bits_oi=8)
-
-        return string, string_nr, sf_nr, f_nr
-
-    @staticmethod
-    def _sfrbx_lift_bds_nav(dwrds: List[int]) -> int:
-        """Extract sub_frame data"""
-        sub_frame = 0
-        for idx, dwrd in enumerate(dwrds):
-            sub_frame = int_append_int(int_a=sub_frame, int_b=dwrd, l_shift_a=30, bits_oi_b=30)
-        return sub_frame
 
     def _preprocess_ubx_gps(self, ubx_msg: UBXMessage) -> Tuple[GnssNavMsgId, int, int]:
         """
@@ -348,15 +264,6 @@ class UbxNavMessageParserHandle:
 
             if msg_type_id in CNavGpsMessage.uuid_msg_types:
                 allowed, discard = set(), set()
-                uuid_d = CNavGpsMessage.uuid_dict
-                if self.nav_msg_lvl == ExpectNavMsgLevel.SV_DATA:  # ephemeris, clock, iono, utc ggto only
-                    discard = uuid_d["uuid_reduced_almanac"] | uuid_d["uuid_midi_almanac"] | uuid_d["uuid_eop"] | \
-                              uuid_d["uuid_diff_correction"] | uuid_d["uuid_text"]
-                elif self.nav_msg_lvl == ExpectNavMsgLevel.ALMANAC:  # up to EOP and whole reduced almanac
-                    discard = uuid_d["uuid_midi_almanac"] | uuid_d["uuid_diff_correction"] | uuid_d["uuid_text"]
-                else:  # all data required to be stored
-                    discard = uuid_d["uuid_text"]
-                discard = set()  # TODO
 
                 for _, s in CNavGpsMessage.uuid_dict.items():
                     if s not in discard:
@@ -416,6 +323,58 @@ class UbxNavMessageParserHandle:
         return nav_msg_id, uuid, sub_frame
 
     @staticmethod
+    def _sfrbx_lift_gal_inav(dwrds: List[int]) -> Tuple[int, int, int]:
+        """Extract word, SAR and CRC from dwrds of ubx-rxm-sfrbx galileo I/NAV msg. Note SAR not defined for E5 BI/Q"""
+        word, sar, crc = 0, 0, 0
+        for idx, dwrd in enumerate(dwrds):
+            if idx == 0:
+                word = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=30)
+            elif idx in (1, 2):
+                word = int_append_int(int_a=word, int_b=dwrd, l_shift_a=32, bits_oi_b=32)
+            elif idx == 3:
+                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=14, bits_oi=18)
+                word = int_append_int(int_a=word, int_b=mod_dwrd, l_shift_a=18)
+            elif idx == 4:
+                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=14, bits_oi=16)
+                word = int_append_int(int_a=word, int_b=mod_dwrd, l_shift_a=16, bits_oi_b=16)
+            elif idx == 5:
+                sar = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=6)
+            elif idx == 6:
+                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=16, bits_oi=16)
+                sar = int_append_int(int_a=sar, int_b=mod_dwrd, l_shift_a=16, bits_oi_b=16)
+                crc = shift_mask_int(int_=dwrd, r_shift=0, bits_oi=14)
+            elif idx == 7:
+                mod_dwrd = shift_mask_int(int_=dwrd, r_shift=22, bits_oi=10)
+                crc = int_append_int(int_a=crc, int_b=mod_dwrd, l_shift_a=10, bits_oi_b=10)
+
+        return word, sar, crc
+
+    @staticmethod
+    def _sfrbx_lift_glon_nav(dwrds: List[int]) -> Tuple[int, int, int, int]:
+        """Extract string, string_nr, super_frame_nr and frame_nr"""
+        string, string_nr, sf_nr, f_nr = 0, 0, 0, 0
+        for idx, word in enumerate(dwrds):
+            if idx in (0, 1):
+                string = int_append_int(int_a=string, int_b=word, l_shift_a=32, bits_oi_b=32)
+                if idx == 0:
+                    string_nr = shift_mask_int(int_=word, r_shift=27, bits_oi=4)
+            elif idx == 2:
+                string = int_append_int(int_a=string, int_b=word, l_shift_a=11, bits_oi_b=21)
+            elif idx == 3 and word != 0:  # note this word is deduced by receiver and thus not always available
+                sf_nr = shift_mask_int(int_=word, r_shift=16, bits_oi=16)
+                f_nr = shift_mask_int(int_=word, r_shift=0, bits_oi=8)
+
+        return string, string_nr, sf_nr, f_nr
+
+    @staticmethod
+    def _sfrbx_lift_bds_nav(dwrds: List[int]) -> int:
+        """Extract sub_frame data"""
+        sub_frame = 0
+        for idx, dwrd in enumerate(dwrds):
+            sub_frame = int_append_int(int_a=sub_frame, int_b=dwrd, l_shift_a=30, bits_oi_b=30)
+        return sub_frame
+
+    @staticmethod
     def _ubx_rxm_sfrbx_dwrds(ubx_msg: UBXMessage) -> List[int]:
         """Extract all dwrds from ubx-rxm-sfrbx UBXMessage as a list."""
         data = []
@@ -438,12 +397,8 @@ class UbxNavMessageParserHandle:
             for gnss in self._raw_data.keys():
                 for svid in self._raw_data[gnss].keys():
                     for nav_msg_id in self._raw_data[gnss][svid].keys():
-                        if not self._read_sufficient[gnss][svid][nav_msg_id]:
-                            self.logger.info(f"{nav_msg_id} for svid: {svid} not yet completely read.")
-                            # continue  # TODO
                         decoded_msg: GnssNavMessage = self.decode_nav_msg(
                             gnss_id=gnss, sv_id=svid, nav_msg_id=nav_msg_id)
-
                         if gnss not in decoded_msgs.keys():
                             decoded_msgs.update({gnss: {svid: {nav_msg_id: decoded_msg}}})
                         elif svid not in decoded_msgs[gnss].keys():
@@ -480,22 +435,51 @@ class UbxNavMessageParserHandle:
 class NavMessageParser:
     """
     GNSS-Navigation message parser which decodes raw data into corresponding navigation message.
-    Requires only raw nav-msg data. Should not be receiver dependent.
+    Requires only raw nav-msg data. Is receiver independent and works on actual raw nav-data payload.
     """
     def __init__(self):
         self.byteorder = "little"  # protocol is implemented in "little-endian"
         pass
 
+    @staticmethod
+    def determine_nav_msg(nav_msg_id: GnssNavMsgType, svid: GnssSvidType) -> GnssNavMessage:
+        """Adapter to create empty GnssNavMsg object which will be filled later subframe by subframe."""
+
+        if nav_msg_id == GnssNavMsgId.GPS_LNAV:
+            msg: GnssNavMessage = LNavGpsMessage(svid=svid)
+        elif nav_msg_id == GnssNavMsgId.GPS_CNAV:
+            msg = CNavGpsMessage(svid=svid)
+        elif nav_msg_id == GnssNavMsgId.GAL_INAV:
+            msg = INavGalMessage(svid=svid)
+        elif nav_msg_id == GnssNavMsgId.GLON_NAV:
+            msg = GlonNavMessage(svid=svid)
+        elif nav_msg_id == GnssNavMsgId.BEID_D1:
+            msg = BdsD1NavMessage(svid=svid)
+        elif nav_msg_id == GnssNavMsgId.BEID_D2:
+            msg = BdsD2NavMessage(svid=svid)
+        else:
+            raise NotImplementedError(f"Message: {nav_msg_id} not yet implemented.")
+        return msg
+
+    @staticmethod
+    def decode_subframe(gnss_nav_msg: GnssNavMessage, uuid: int, payload: int) -> None:
+        """
+        Add subframe to  GNSS-Navigation Message based on passed payload and identifiers.
+        :param gnss_nav_msg: GnssNavMsg onto which subframe is added
+        :param uuid: Identifying specific page|word|frame of nav message
+        :param payload: raw data of page|word|frame
+        :return: None
+        """
+        try:
+            gnss_nav_msg.add_frame(uuid=uuid, payload=payload)
+        except (NavMsgError, Exception) as e:
+            raise NavMsgDecodingError(e)
+        finally:
+            return None
+
     def decode_nav_msg(self, nav_msg_id: GnssNavMsgType, svid: GnssSvidType, uuids: List[int], payloads: List[int]
                        ) -> GnssNavMessage:
-        """
-        Adapter to build GNSS-Navigation Message based on passed payload and identifiers.
-        :param nav_msg_id: Identifying Navigation message
-        :param svid: satellite vehicle identifier
-        :param uuids: Identifying specific page|word|frame of nav message
-        :param payloads: raw data of page|word|frame
-        :return: GnssNavMessage
-        """
+        # legacy method -> remove
         if nav_msg_id == GnssNavMsgId.GPS_LNAV:
             msg: GnssNavMessage = LNavGpsMessage(svid=svid)
         elif nav_msg_id == GnssNavMsgId.GPS_CNAV:
@@ -519,7 +503,7 @@ class NavMessageParser:
         except (NavMsgError, Exception) as e:
             print(f"Error {e} occurred")
         else:
-            print(f"Build {nav_msg_id} with {len(msg.data)} items.")
+            print(f"Build {msg} with {len(msg.data)} items.")
         finally:
             return msg
 

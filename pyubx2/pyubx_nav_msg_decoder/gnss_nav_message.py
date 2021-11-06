@@ -84,6 +84,9 @@ class GnssNavMessage(metaclass=ABCMeta):
         self.data: Dict = {}  # TODO check if pandas df, xarray or sth else more suited
         pass
 
+    def __str__(self):
+        return f"{self.msg_name} for svid = {self.svid}"
+
     @property
     def ephemeris(self) -> Optional[BaseEphemeris]:
         """Getter for ephemeris data. Returns None in case not all necessary data available to construct ephemeris."""

@@ -1,7 +1,18 @@
 import os
-from pyubx2 import UBXReader
 from logging import getLogger
+from collections import namedtuple
 import warnings
+
+import pytest
+
+from pyubx2.pyubx_nav_msg_decoder.ubx_nav_message_parser import UbxNavMessageParserHandle
+from pyubx2.ubxreader import UBXReader
+from pyubx2.exceptions import UBXMessageError, UBXParseError
+
+ubx_cfg = namedtuple("ubx_cfg", ('folder', 'record_file'))
+glo_cfg = ubx_cfg("data", "COM3_211031_144044_glo.ubx")
+gps_cfg = ubx_cfg("data", "COM3_211031_135504_raw_gps.ubx")
+gal_cfg = ubx_cfg("data", "COM3_211031_171502_raw_gal.ubx")
 
 
 def test_gnss_nav_msg_offline(ubx_offline_config):
@@ -19,9 +30,9 @@ def test_gnss_nav_msg_offline(ubx_offline_config):
         while cond:
             try:
                 idx += 1
-                ubr = UBXReader(stream=rec, ubxonly=False)
+                ubr = UBXReader(stream=rec, ubxonly=False, decodenavdata=False)
                 try:
-                    (raw_data, parsed_data) = ubr.read()
+                    (_, parsed_data) = ubr.read()
                 except UBXParseError as e:
                     warnings.warn(str(e))
                     continue
@@ -30,19 +41,17 @@ def test_gnss_nav_msg_offline(ubx_offline_config):
                     break
                 elif parsed_data.identity == "RXM-SFRBX":
                     # print_ubx_rxm_sfrbx(ubx_msg=parsed_data)
-                    ubx_nav_msg_parser.add_raw_data(ubx_msg=parsed_data)
+                    ubx_nav_msg_parser.add_subframe(ubx_msg=parsed_data)
 
-                if not ubx_nav_msg_parser.need_data:
-                    decoded_msgs = ubx_nav_msg_parser.decode_nav_msgs()
-
-                # exit conditions
-                if idx > 15_000:
-                    cond = False
-                    decoded_msgs = ubx_nav_msg_parser.decode_nav_msgs()
             except UBXMessageError as e:
                 logger.warning(f"UBXMessage Error: {e}")
             except StopIteration as _:
                 logger.info(f"Iterator exhausted.")
                 cond = False
     assert False, f"END - {idx}"
+    pass
+
+
+if __name__ == '__main__':
+    test_gnss_nav_msg_offline(glo_cfg)
     pass

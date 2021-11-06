@@ -173,6 +173,7 @@ class UBXReader:
         msgmode = kwargs.get("msgmode", ubt.GET)
         validate = kwargs.get("validate", VALCKSUM)
         parsebf = kwargs.get("parsebitfield", True)
+        decnavdat = kwargs.get("deocdenavdata", False)
 
         # accept args for backwards compatibility if no kwargs
         if len(kwargs) == 0:
@@ -222,7 +223,7 @@ class UBXReader:
             if payload is None:
                 return UBXMessage(clsid, msgid, msgmode)
             return UBXMessage(
-                clsid, msgid, msgmode, payload=payload, parsebitfield=parsebf
+                clsid, msgid, msgmode, payload=payload, parsebitfield=parsebf, decodenavdata=decnavdat
             )
         except KeyError as err:
             modestr = ["GET", "SET", "POLL"][msgmode]
