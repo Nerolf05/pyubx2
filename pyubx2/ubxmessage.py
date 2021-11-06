@@ -16,6 +16,7 @@ import pyubx2.ubxtypes_get as ubg
 import pyubx2.ubxtypes_set as ubs
 import pyubx2.ubxtypes_poll as ubp
 import pyubx2.ubxtypes_configdb as ubcdb
+from pyubx2.ubxnavdecode import nav_decode
 from pyubx2.ubxhelpers import (
     calc_checksum,
     atttyp,
@@ -56,6 +57,9 @@ class UBXMessage:
         self._checksum = b""
 
         self._parsebf = kwargs.get("parsebitfield", True)  # parsing bitfields Y/N?
+        self._decodenavdata = kwargs.get(
+            "decodenavdata", True
+        )  # decode RXM-SFRBX nav data Y/N? TODO make default False in final
 
         if msgmode not in (0, 1, 2):
             raise ube.UBXMessageError(f"Invalid msgmode {msgmode} - must be 0, 1 or 2.")
@@ -72,6 +76,7 @@ class UBXMessage:
             self._ubxID = ubxID
 
         self._do_attributes(**kwargs)
+
         self._immutable = True  # once initialised, object is immutable
 
     def _do_attributes(self, **kwargs):
@@ -147,7 +152,7 @@ class UBXMessage:
                     )
             else:  # repeating group of attributes
                 (offset, index) = self._set_attribute_group(
-                    att, offset, index, **kwargs
+                    att, offset, key, index, **kwargs
                 )
         else:  # single attribute
             offset = self._set_attribute_single(att, offset, key, index, **kwargs)
@@ -155,13 +160,14 @@ class UBXMessage:
         return (offset, index)
 
     def _set_attribute_group(
-        self, att: tuple, offset: int, index: list, **kwargs
+        self, att: tuple, offset: int, key: str, index: list, **kwargs
     ) -> tuple:
         """
         Process (nested) group of attributes.
 
         :param tuple att: attribute group - tuple of (num repeats, attribute dict)
         :param int offset: payload offset in bytes
+        :param str key: group keyword
         :param list index: repeating group index array
         :param kwargs: optional payload key/value pairs
         :return: (offset, index[])
@@ -178,7 +184,7 @@ class UBXMessage:
             and self._ubxID == b"\x8b"
             and self._mode == ubt.GET
         ):
-            self._set_cfgval_attributes(offset, **kwargs)
+            self._set_attribute_cfgval(offset, **kwargs)
         else:
             # derive or retrieve number of items in group
             if isinstance(numr, int):  # fixed number of repeats
@@ -189,12 +195,21 @@ class UBXMessage:
                 rng = getattr(self, numr)
             # recursively process each group attribute,
             # incrementing the payload offset and index as we go
-            for i in range(rng):
-                index[-1] = i + 1
-                for key1 in attd.keys():
-                    (offset, index) = self._set_attribute(
-                        offset, attd, key1, index, **kwargs
-                    )
+            # RXM-SFRBX navdata group needs special decoding
+            if (
+                self._ubxClass == b"\x02"
+                and self._ubxID == b"\x13"
+                and key == "navdata"
+                and self._decodenavdata
+            ):
+                (offset, index) = self._set_attribute_navdata(att, offset, key, index)
+            else:
+                for i in range(rng):
+                    index[-1] = i + 1
+                    for key1 in attd.keys():
+                        (offset, index) = self._set_attribute(
+                            offset, attd, key1, index, **kwargs
+                        )
 
         index.pop()  # remove this (nested) group index
 
@@ -221,7 +236,7 @@ class UBXMessage:
         keyr = key
         for i in index:  # one index for each nested level
             if i > 0:
-                keyr = keyr + f"_{i:02d}"
+                keyr += f"_{i:02d}"
 
         # determine attribute size (bytes)
         if att == ubt.CH:  # variable length string
@@ -317,7 +332,7 @@ class UBXMessage:
         keyr = key
         for i in index:  # one index for each nested level
             if i > 0:
-                keyr = keyr + f"_{i:02d}"
+                keyr += f"_{i:02d}"
 
         atts = attsiz(keyt)  # determine flag size in bits
 
@@ -333,7 +348,42 @@ class UBXMessage:
         bfoffset += atts
         return (bitfield, bfoffset)
 
-    def _set_cfgval_attributes(self, offset: int, **kwargs):
+    def _set_attribute_navdata(
+        self, att: tuple, offset: int, key: str, index: list
+    ) -> tuple:
+        """
+        Parse and decode RXM-SFRBX nav data dwrds.
+
+        TODO WORK IN PROGRESS
+
+        :param tuple att: attribute group - tuple of (num repeats, attribute dict)
+        :param int offset: payload offset in bytes
+        :param str key: group keyword
+        :param list index: repeating group index array
+        :return: (offset, index[])
+        :rtype: tuple
+        """
+
+        numr, attd = att  # number of repeats, attribute dictionary
+        gnssId = getattr(self, "gnssId")
+        rng = getattr(self, numr)
+        dwrds = []
+        for i in range(rng):
+            index[-1] = i + 1
+            att = attd["dwrd"]  # "U004"
+            atts = attsiz(att)  # 4 bytes
+            valb = self._payload[offset : offset + atts]
+            val = self.bytes2val(valb, att)
+            dwrds.append(val)
+            offset += atts
+
+        attd = nav_decode(gnssId, dwrds)
+        for (key, val) in attd.items():
+            setattr(self, key, val)
+
+        return (offset, index)
+
+    def _set_attribute_cfgval(self, offset: int, **kwargs):
         """
         Parse CFG-VALGET payload to set of configuration
         key value pairs.

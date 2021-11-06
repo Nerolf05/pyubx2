@@ -91,6 +91,7 @@ The constructor accepts the following optional keyword arguments:
 * `ubxonly`: True = raise error if stream contains non-UBX data, False = ignore non-UBX data (default)
 * `validate`: VALCKSUM (0x01) = validate checksum (default), VALNONE (0x00) = ignore invalid checksum or length
 * `parsebitfield`: 1 = parse bitfields ('X' type properties) as individual bit flags, where defined (default), 0 = leave bitfields as byte sequences
+* `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 * `msgmode`: 0 = GET (default), 1 = SET, 2 = POLL
 
 Example -  Serial input. This example will ignore any non-UBX data:
@@ -120,6 +121,7 @@ The `parse()` method accepts the following optional keyword arguments:
 
 * `validate`: VALCKSUM (0x01) = validate checksum (default), VALNONE (0x00) = ignore invalid checksum or length
 * `parsebitfield`: 1 = parse bitfields as individual bit flags, where defined (default), 0 = leave bitfields as byte sequences
+* `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 * `msgmode`: 0 = GET (default), 1 = SET, 2 = POLL
 
 Properties within repeating groups are parsed with a two-digit suffix (svid_01, svid_02, etc.).
@@ -375,6 +377,7 @@ Optional Args:
 - `validate`: 1 = validate checksum (default), 0 = do not validate checksum
 - `output`: 0 = parsed (default), 1 = binary, 2 = hexadecimal
 - `parsebitfield`: 1 = parse bitfields as individual bits (default), 0 = leave bitfields as byte sequences
+- `decodenavdata`: 1 = decode nav data contained in RXM-SFRBX message, 0 = do not decode data (default)
 - `filter`: comma-separated list of specific UBX message identities to display e.g. `filter=NAV-PVT,NAV-CLOCK` (defaults to "*" - all UBX messages).
 
 For help, type:

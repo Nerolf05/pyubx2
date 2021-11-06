@@ -2743,7 +2743,7 @@ UBX_PAYLOADS_GET = {
         "chn": U1,
         "version": U1,
         "reserved1": U1,
-        "group": ("numWords", {"dwrd": U4}),  # repeating group * numWords
+        "navdata": ("numWords", {"dwrd": U4}),  # repeating group * numWords
     },
     "RXM-SVSI": {
         "iTOW": U4,

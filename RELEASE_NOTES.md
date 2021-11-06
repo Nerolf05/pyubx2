@@ -1,14 +1,14 @@
 # pyubx2 Release Notes
 
-### RELEASE 1.1.4
+### RELEASE 1.1.4-alpha
+
+## NB: WORK IN PROGRESS - NOT FOR PRODUCTION USE ##
 
 ENHANCEMENTS:
-1. Performance benchmarking utility `benchmark.py` added to examples.
-2. Python 3.10 support added to `setup.py` and GitHub Actions workflow.
-3. Minor code clarifications & pylint advisories.
 
-FIXES:
-1. Minor fixes to bitfield definitions in CFG-CFG, CFG-PVT and NAV-SOL - thanks to all contributors.
+1. Add experimental functionality to decode RXM-SFRBX navigation data dwrds on a single-pass basis. Primarily intended to demonstrate a possible approach which is consistent with core `pyubx2` processing style. Currently only handles GPS data but would be expanded to handle other GNSS if taken forward. 
+2. *NB:* `pyubx2` will continue to output parsed UBX data as individual `UBXMessage` objects. There are no plans to enhance `pyubx2` to aggregate time series data across multiple RXM-SFRBX messages or to perform conversion to other output formats e.g. RINEX, though such functionality could always be developed as a separate application of the `pyubx2` library.
+3. Add Python 3.10 to list of supported Python 3 editions (no code changes were required).
 
 ### RELEASE 1.1.3
 
