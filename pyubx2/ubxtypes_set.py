@@ -5,27 +5,14 @@ UBX Protocol Input payload definitions
 THESE ARE THE PAYLOAD DEFINITIONS FOR _SET_ MESSAGES _TO_ THE RECEIVER
 (e.g. configuration and calibration commands; AssistNow payloads)
 
-NB: Attribute names must be unique within each message class/id
-
-NB: Repeating groups must be defined as a tuple thus:
-    'group': ('numr', {dict})
-    where
-    - 'numr' is either:
-       a) an integer representing a fixed number of repeats e.g 32
-       b) a string representing the name of a preceding attribute
-          containing the number of repeats e.g. 'numCh'
-       c) 'None' for a 'variable by size' repeating group
-          (only one such group is permitted per message type)
-    - {dict} is the nested dictionary containing the repeating
-      attributes
-
 Created on 27 Sep 2020
 
 Information sourced from u-blox Interface Specifications © 2013-2021, u-blox AG
 
 :author: semuadmin
 """
-# pylint: disable=too-many-lines, line-too-long
+
+# pylint: disable=too-many-lines, line-too-long, duplicate-code
 
 from pyubx2.ubxtypes_core import (
     C2,
@@ -184,6 +171,7 @@ UBX_PAYLOADS_SET = {
                 "devBBR": U1,
                 "devFlash": U1,
                 "devEEPROM": U1,
+                "reserved1": U1,
                 "devSpiFlash": U1,
             },
         ),
@@ -734,7 +722,13 @@ UBX_PAYLOADS_SET = {
                 "outRTCM3": U1,
             },
         ),
-        "reserved4": U2,
+        "flags": (
+            X2,
+            {
+                "reserved10": U1,
+                "extendedTxTimeout": U1,
+            },
+        ),
         "reserved5": U2,
     },
     "CFG-PWR": {"version": U1, "reserved1": U3, "state": U4},

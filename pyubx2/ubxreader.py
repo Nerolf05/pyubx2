@@ -36,10 +36,10 @@ class UBXReader:
         """Constructor.
 
         :param stream stream: input data stream
-        :param bool ubxonly (kwarg): check for non-UBX data (False (ignore - default), True (reject))
-        :param int validate (kwarg): validate checksum (VALCKSUM (1)=True (default), VALNONE (0)=False)
-        :param int msgmode (kwarg): message mode (0=GET (default), 1=SET, 2=POLL)
-        :param bool parsebitfield (kwarg): parse bitfields True/false
+        :param bool ubxonly: (kwarg) check non-UBX data (False (ignore - default), True (reject))
+        :param int validate: (kwarg) validate cksum (VALCKSUM (1)=True (default), VALNONE (0)=False)
+        :param int msgmode: (kwarg) message mode (0=GET (default), 1=SET, 2=POLL)
+        :param bool parsebitfield: (kwarg) parse bitfields True/false
         :raises: UBXStreamError (if mode is invalid)
 
         """
@@ -72,7 +72,7 @@ class UBXReader:
 
         return self
 
-    def __next__(self) -> (bytes, UBXMessage):
+    def __next__(self) -> tuple:
         """
         Return next item in iteration.
 
@@ -108,11 +108,11 @@ class UBXReader:
             is_nmea = False
             if len(byte1) < 1:  # EOF
                 break
-            if byte1 == b"\xb5":
+            if byte1 == ubt.UBX_HDR[0:1]:
                 byte2 = self._stream.read(1)
                 if len(byte2) < 1:  # EOF
                     break
-                if byte2 == b"\x62":
+                if byte2 == ubt.UBX_HDR[1:2]:
                     is_ubx = True
             if is_ubx:  # it's a UBX message
                 byten = self._stream.read(4)
@@ -157,8 +157,8 @@ class UBXReader:
         (the UBXMessage constructor can calculate and assign its own values anyway).
 
         :param bytes message: binary message to parse
-        :param int validate (kwarg): validate checksum (VALCKSUM (1)=True (default), VALNONE (0)=False)
-        :param int msgmode (kwarg): message mode (0=GET (default), 1=SET, 2=POLL)
+        :param int validate: (kwarg) validate cksum (VALCKSUM (1)=True (default), VALNONE (0)=False)
+        :param int msgmode: (kwarg) message mode (0=GET (default), 1=SET, 2=POLL)
         :return: UBXMessage object
         :rtype: UBXMessage
         :raises: UBXParseError (if data stream contains invalid data or unknown message type)

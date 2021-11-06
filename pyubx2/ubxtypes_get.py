@@ -4,28 +4,14 @@ UBX Protocol Output payload definitions
 THESE ARE THE PAYLOAD DEFINITIONS FOR _GET_ MESSAGES _FROM_ THE RECEIVER
 (e.g. Periodic Navigation Data; Poll Responses; Info messages)
 
-NB: Attribute names must be unique within each message class/id
-
-NB: Repeating or bitfield groups must be defined as a tuple thus
-    'group': ('numr', {dict})
-    where
-    - 'numr' is either:
-       a) an integer representing a fixed number of repeats e.g 32
-       b) a string representing the name of a preceding attribute
-          containing the number of repeats e.g. 'numCh'
-       c) an 'X' attribute type ('X1', 'X2', 'X4', etc) representing a group of individual bit flags
-       d) 'None' for a 'variable by size' repeating group
-          (only one such group is permitted per message type)
-    - {dict} is the nested dictionary containing the repeating
-      attributes
-
 Created on 27 Sep 2020
 
 Information sourced from u-blox Interface Specifications © 2013-2021, u-blox AG
 
 :author: semuadmin
 """
-# pylint: disable=too-many-lines, line-too-long
+
+# pylint: disable=too-many-lines, line-too-long, duplicate-code
 
 from pyubx2.ubxtypes_core import (
     A256,
@@ -57,6 +43,7 @@ from pyubx2.ubxtypes_core import (
     X4,
     X24,
 )
+
 
 UBX_PAYLOADS_GET = {
     "ACK-ACK": {"clsID": U1, "msgID": U1},
@@ -191,6 +178,7 @@ UBX_PAYLOADS_GET = {
                 "devBBR": U1,
                 "devFlash": U1,
                 "devEEPROM": U1,
+                "reserved1": U1,
                 "devSpiFlash": U1,
             },
         ),
@@ -741,7 +729,13 @@ UBX_PAYLOADS_GET = {
                 "outRTCM3": U1,
             },
         ),
-        "reserved4": U2,
+        "flags": (
+            X2,
+            {
+                "reserved10": U1,
+                "extendedTxTimeout": U1,
+            },
+        ),
         "reserved5": U2,
     },
     "CFG-PWR": {"version": U1, "reserved1": U3, "state": U4},
@@ -2300,7 +2294,15 @@ UBX_PAYLOADS_GET = {
         "fTOW": I4,
         "week": I2,
         "gpsFix": U1,
-        "flags": X1,  # TODO
+        "flags": (
+            X1,
+            {
+                "gpsfixOK": U1,
+                "diffSoln": U1,
+                "wknSet": U1,
+                "towSet": U1,
+            },
+        ),
         "ecefX": I4,
         "ecefY": I4,
         "ecefZ": I4,
