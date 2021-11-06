@@ -26,7 +26,7 @@ def test_gnss_nav_msg_offline(ubx_offline_config):
 
     ubx_nav_msg_parser = UbxNavMessageParserHandle()
 
-    with open(record_path, "rb") as rec:
+    with open(record_path, "rb") as rec:  # read log-file
         while cond:
             try:
                 idx += 1
@@ -48,10 +48,13 @@ def test_gnss_nav_msg_offline(ubx_offline_config):
             except StopIteration as _:
                 logger.info(f"Iterator exhausted.")
                 cond = False
-    assert False, f"END - {idx}"
+    for gnss_id in ubx_nav_msg_parser.gnss_msgs.keys():
+        for sv_id in ubx_nav_msg_parser.gnss_msgs[gnss_id].keys():
+            for nav_msg_id, gnss_msg in ubx_nav_msg_parser.gnss_msgs[gnss_id][sv_id].items():
+                print(f"{gnss_id} - {sv_id} - {nav_msg_id}: {gnss_msg.ephemeris}\n{gnss_msg.almanac}")
     pass
 
 
 if __name__ == '__main__':
-    test_gnss_nav_msg_offline(glo_cfg)
+    test_gnss_nav_msg_offline(gps_cfg)
     pass
